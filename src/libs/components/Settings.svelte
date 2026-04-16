@@ -1,11 +1,15 @@
 <script lang="ts">
-  let { 
-    show = $bindable(false), 
+  import { robotApi } from "../api";
+
+  let {
+    show = $bindable(false),
     teamNumber = $bindable(9206),
     alliance = $bindable(0),
     station = $bindable(1),
     onSave
   } = $props();
+
+  let simMode = $state(false);
 
   function close() {
     show = false;
@@ -13,6 +17,11 @@
 
   function handleUpdate() {
     if (onSave) onSave();
+  }
+
+  async function toggleSimMode() {
+    simMode = !simMode;
+    await robotApi.setRobotAddress(simMode ? "127.0.0.1" : "");
   }
 </script>
 
@@ -47,6 +56,17 @@
             </div>
         </div>
       </div>
+      <div>
+        <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-2">Simulation</span>
+        <button onclick={toggleSimMode}
+          class="w-full p-3 rounded-xl border font-bold transition-all {simMode ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400' : 'bg-black border-white/5 text-neutral-600'}">
+          {simMode ? 'SIM MODE ON — 127.0.0.1' : 'Enable Sim Mode'}
+        </button>
+        {#if simMode}
+          <p class="text-[10px] text-yellow-600 mt-2 text-center">Connecting to local WPILib simulation</p>
+        {/if}
+      </div>
+
       <p class="text-[10px] text-neutral-600 mt-auto uppercase font-bold text-center italic">NovaDS v1.0.0-ALPHA</p>
     </div>
   </div>

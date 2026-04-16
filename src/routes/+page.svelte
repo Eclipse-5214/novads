@@ -65,6 +65,7 @@
     gm.start();
 
     const initEvents = async () => {
+      await updateSettings();
       const subs = await setupTauriListeners({
         onBattery: (v) => { battery = parseFloat(v.toFixed(2)); },
         onComms: (v) => {

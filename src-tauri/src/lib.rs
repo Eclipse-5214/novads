@@ -65,6 +65,18 @@ fn reset_joysticks() {
     }
 }
 
+#[tauri::command]
+fn set_robot_address(address: String) {
+    unsafe {
+        if address.is_empty() {
+            DS_SetCustomRobotAddress(std::ptr::null());
+        } else {
+            let c_addr = std::ffi::CString::new(address).unwrap();
+            DS_SetCustomRobotAddress(c_addr.as_ptr());
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -74,6 +86,7 @@ pub fn run() {
 
             unsafe {
                 DS_Init();
+                DS_SetTeamNumber(9206);
                 let mut frc2020 = DS_GetProtocolFRC_2020();
                 DS_ConfigureProtocol(&mut frc2020);
             }
@@ -105,11 +118,12 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            process_robot_command, 
+            process_robot_command,
             update_ds_settings,
             set_robot_mode,
             update_joystick_data,
-            reset_joysticks
+            reset_joysticks,
+            set_robot_address
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
