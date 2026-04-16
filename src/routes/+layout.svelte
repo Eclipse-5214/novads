@@ -1,6 +1,6 @@
 <script>
   import "../app.css";
-  let { children } = $props(); // This is Svelte 5 syntax
+  let { children } = $props();
 </script>
 
 {@render children()}
