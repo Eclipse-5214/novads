@@ -44,5 +44,7 @@ jobs:
             - name: Upload APK
               uses: actions/upload-artifact@v4
               with:
-                  name: app-debug
-                  path: src-tauri/gen/android/app/build/outputs/apk/debug/*.apk
+                  name: app-release-unsigned
+                  # This finds any APK in the android build folder,
+                  # no matter if it's in /debug, /release, or /universal
+                  path: src-tauri/gen/android/**/*.apk
