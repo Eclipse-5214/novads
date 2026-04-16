@@ -41,19 +41,44 @@ fn set_robot_mode(mode: i32) {
     unsafe { DS_SetControlMode(mode as u32); }
 }
 
+#[derive(serde::Deserialize)]
+struct JoystickSlot {
+    axes: Vec<f32>,
+    buttons: Vec<bool>,
+}
+
+static JOYSTICK_CONFIG: std::sync::OnceLock<std::sync::Mutex<Vec<Option<(usize, usize)>>>> = std::sync::OnceLock::new();
+
 #[tauri::command]
-fn update_joystick_data(axes: Vec<f32>, buttons: Vec<bool>) {
+fn update_joystick_data(joysticks: Vec<Option<JoystickSlot>>) {
+    let new_config: Vec<Option<(usize, usize)>> = joysticks.iter()
+        .map(|s| s.as_ref().map(|d| (d.axes.len(), d.buttons.len())))
+        .collect();
+
+    let config_lock = JOYSTICK_CONFIG.get_or_init(|| std::sync::Mutex::new(Vec::new()));
+    let mut config = config_lock.lock().unwrap();
+
     unsafe {
-        if DS_GetJoystickCount() == 0 {
-            DS_JoysticksAdd(axes.len() as i32, 0, buttons.len() as i32);
+        if *config != new_config {
+            DS_JoysticksReset();
+            for slot in &new_config {
+                match slot {
+                    Some((axes, buttons)) => DS_JoysticksAdd(*axes as i32, 0, *buttons as i32),
+                    None => DS_JoysticksAdd(0, 0, 0),
+                }
+            }
+            *config = new_config;
         }
 
-        for (i, val) in axes.iter().enumerate() {
-            DS_SetJoystickAxis(0, i as i32, *val as f32);
-        }
-
-        for (i, pressed) in buttons.iter().enumerate() {
-            DS_SetJoystickButton(0, i as i32, if *pressed { 1 } else { 0 });
+        for (i, slot) in joysticks.iter().enumerate() {
+            if let Some(data) = slot {
+                for (j, &val) in data.axes.iter().enumerate() {
+                    DS_SetJoystickAxis(i as i32, j as i32, val);
+                }
+                for (j, &pressed) in data.buttons.iter().enumerate() {
+                    DS_SetJoystickButton(i as i32, j as i32, if pressed { 1 } else { 0 });
+                }
+            }
         }
     }
 }
@@ -67,13 +92,10 @@ fn reset_joysticks() {
 
 #[tauri::command]
 fn set_robot_address(address: String) {
+    println!("🌐 [RUST]: Setting robot address to: '{}'", address);
     unsafe {
-        if address.is_empty() {
-            DS_SetCustomRobotAddress(std::ptr::null());
-        } else {
-            let c_addr = std::ffi::CString::new(address).unwrap();
-            DS_SetCustomRobotAddress(c_addr.as_ptr());
-        }
+        let c_addr = std::ffi::CString::new(address).unwrap();
+        DS_SetCustomRobotAddress(c_addr.as_ptr());
     }
 }
 
@@ -107,6 +129,13 @@ pub fn run() {
                             }
                             DS_EventType_DS_ROBOT_CODE_CHANGED => {
                                 let _ = handle.emit("code-update", event.robot.code != 0);
+                            }
+                            DS_EventType_DS_NETCONSOLE_NEW_MESSAGE => {
+                                let msg_ptr = event.netconsole.message;
+                                if !msg_ptr.is_null() {
+                                    let msg = std::ffi::CStr::from_ptr(msg_ptr).to_string_lossy().into_owned();
+                                    let _ = handle.emit("console-message", msg);
+                                }
                             }
                             _ => {}
                         }
