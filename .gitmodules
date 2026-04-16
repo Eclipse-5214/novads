@@ -1,0 +1,3 @@
+[submodule "src-tauri/libds"]
+	path = src-tauri/libds
+	url = https://github.com/FRC-Utilities/LibDS
