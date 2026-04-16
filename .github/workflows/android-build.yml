@@ -1,0 +1,41 @@
+name: Android Build
+on:
+    push:
+        branches: [main] # Runs every time you push to main
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: "zulu"
+                  java-version: "17"
+
+            - name: Setup Android SDK
+              uses: android-actions/setup-android@v3
+
+            - name: Install Rust
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
+
+            - name: Install Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: lts/*
+
+            - name: Install Dependencies
+              run: npm install
+
+            - name: Build Android APK
+              run: npx tauri android build --debug # --debug is easier for testing; use --release later for signing
+
+            - name: Upload APK
+              uses: actions/upload-artifact@v4
+              with:
+                  name: app-debug
+                  path: src-tauri/gen/android/app/build/outputs/apk/debug/*.apk
