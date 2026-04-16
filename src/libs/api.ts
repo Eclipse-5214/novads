@@ -7,6 +7,7 @@ export const robotApi = {
     setMode: (mode: number) => invoke("set_robot_mode", { mode }),
     updateSettings: (team: number, alliance: number, position: number) => invoke("update_ds_settings", { team, alliance, position }),
     updateJoysticks: (axes: number[], buttons: boolean[]) => invoke("update_joystick_data", { axes, buttons }),
+    setRobotAddress: (address: string) => invoke("set_robot_address", { address }),
 };
 
 export async function setupTauriListeners(callbacks: { onBattery: (v: number) => void; onComms: (v: boolean) => void; onCode: (v: boolean) => void }) {
