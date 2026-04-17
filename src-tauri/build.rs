@@ -30,6 +30,10 @@ fn main() {
 }
 
 fn compile_libds(libds_path: &Path, socky_path: &Path) {
+    println!("cargo:rerun-if-changed={}", libds_path.join("src").display());
+    println!("cargo:rerun-if-changed={}", libds_path.join("include").display());
+    println!("cargo:rerun-if-changed={}", socky_path.display());
+
     let src = libds_path.join("src");
     let mut build = cc::Build::new();
 

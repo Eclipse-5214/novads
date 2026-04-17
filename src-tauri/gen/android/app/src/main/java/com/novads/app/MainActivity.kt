@@ -7,6 +7,8 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import androidx.activity.enableEdgeToEdge
 
 class MainActivity : TauriActivity() {
@@ -18,6 +20,14 @@ class MainActivity : TauriActivity() {
     enableEdgeToEdge()
     bindToWifi()
     super.onCreate(savedInstanceState)
+    hideSystemUI()
+  }
+
+  private fun hideSystemUI() {
+    window.insetsController?.let {
+      it.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+      it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
   }
 
   private fun bindToWifi() {
