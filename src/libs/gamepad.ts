@@ -13,16 +13,14 @@ export interface AvailableGamepad {
     name: string;
 }
 
+// Manages gamepad connections, slot assignments, and live updates to the robot API
 export class GamepadManager {
     private slotAssignments: (number | null)[] = new Array(6).fill(null);
     private wasConnected = false;
     private onStatusChange: (connected: boolean, name: string) => void;
     private onLiveUpdate: (slots: SlotState[], available: AvailableGamepad[]) => void;
 
-    constructor(callbacks: {
-        onStatusChange: (connected: boolean, name: string) => void;
-        onLiveUpdate: (slots: SlotState[], available: AvailableGamepad[]) => void;
-    }) {
+    constructor(callbacks: { onStatusChange: (connected: boolean, name: string) => void; onLiveUpdate: (slots: SlotState[], available: AvailableGamepad[]) => void }) {
         this.onStatusChange = callbacks.onStatusChange;
         this.onLiveUpdate = callbacks.onLiveUpdate;
     }
@@ -51,7 +49,7 @@ export class GamepadManager {
         }
 
         // Auto-assign first available to slot 0 if nothing is assigned yet
-        if (!this.slotAssignments.some(s => s !== null) && available.length > 0) {
+        if (!this.slotAssignments.some((s) => s !== null) && available.length > 0) {
             this.slotAssignments[0] = available[0].index;
         }
 
@@ -71,15 +69,13 @@ export class GamepadManager {
                 name: gp.id.split(" (")[0],
                 gamepadIndex: gpIdx,
                 axes: Array.from(gp.axes).map(Number),
-                buttons: gp.buttons.map(b => b.pressed),
+                buttons: gp.buttons.map((b) => b.pressed),
             };
         });
 
         this.onLiveUpdate(slots, available);
 
-        await robotApi.updateJoysticks(
-            slots.map(s => s.assigned ? { axes: s.axes, buttons: s.buttons } : null)
-        );
+        await robotApi.updateJoysticks(slots.map((s) => (s.assigned ? { axes: s.axes, buttons: s.buttons } : null)));
 
         requestAnimationFrame(this.poll);
     };
