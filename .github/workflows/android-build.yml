@@ -27,10 +27,10 @@ jobs:
             - name: Install NDK
               run: sdkmanager "ndk;27.2.12479018"
 
-            - name: Install Rust (arm64 only)
+            - name: Install Rust
               uses: dtolnay/rust-toolchain@stable
               with:
-                  targets: aarch64-linux-android
+                  targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
 
             - name: Cache Rust build artifacts
               uses: Swatinem/rust-cache@v2
@@ -54,11 +54,14 @@ jobs:
             - name: Build Android APK (arm64 debug)
               env:
                   NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
-              run: pnpm tauri android build --debug --target aarch64
+              run: pnpm tauri android build --debug
+
+            - name: Find APK
+              run: find src-tauri/gen/android/app/build/outputs/apk -name "*.apk" | tee apk-paths.txt
 
             - name: Upload APK
               uses: actions/upload-artifact@v4
               with:
-                  name: novads-arm64-debug
-                  path: src-tauri/gen/android/app/build/outputs/apk/arm64/debug/app-arm64-debug.apk
+                  name: novads-debug
+                  path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
                   if-no-files-found: error
