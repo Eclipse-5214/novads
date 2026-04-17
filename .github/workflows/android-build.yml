@@ -1,11 +1,15 @@
 name: Android Build
+
 on:
     push:
-        branches: [main] # Runs every time you push to main
+        branches: [main]
+    pull_request:
+        branches: [main]
 
 jobs:
     build:
         runs-on: ubuntu-latest
+
         steps:
             - uses: actions/checkout@v4
               with:
@@ -20,31 +24,41 @@ jobs:
             - name: Setup Android SDK
               uses: android-actions/setup-android@v3
 
-            - name: Install Rust
+            - name: Install NDK
+              run: sdkmanager "ndk;27.2.12479018"
+
+            - name: Install Rust (arm64 only)
               uses: dtolnay/rust-toolchain@stable
               with:
-                  targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
+                  targets: aarch64-linux-android
+
+            - name: Cache Rust build artifacts
+              uses: Swatinem/rust-cache@v2
+              with:
+                  workspaces: src-tauri
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 9
 
             - name: Install Node.js
               uses: actions/setup-node@v4
               with:
                   node-version: lts/*
+                  cache: pnpm
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v2
-              with:
-                  version: 8
+            - name: Install JS dependencies
+              run: pnpm install
 
-            - name: Install Dependencies
-              run: npm install
-
-            - name: Build Android APK
-              run: npx tauri android build --debug # --debug is easier for testing; use --release later for signing
+            - name: Build Android APK (arm64 debug)
+              env:
+                  NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
+              run: pnpm tauri android build --debug --target aarch64-linux-android
 
             - name: Upload APK
               uses: actions/upload-artifact@v4
               with:
-                  name: app-release-unsigned
-                  # This finds any APK in the android build folder,
-                  # no matter if it's in /debug, /release, or /universal
-                  path: src-tauri/gen/android/**/*.apk
+                  name: novads-arm64-debug
+                  path: src-tauri/gen/android/app/build/outputs/apk/arm64/debug/app-arm64-debug.apk
+                  if-no-files-found: error

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { robotApi, setupTauriListeners } from "../libs/api";
+  import { robotApi, setupTauriListeners, loadSettings, saveSettings } from "../libs/api";
   import { GamepadManager, type SlotState, type AvailableGamepad } from "../libs/gamepad";
   import StatusHeader from "../libs/components/StatusHeader.svelte";
   import ControlPanel from "../libs/components/ControlPanel.svelte";
@@ -34,6 +34,7 @@
   }
 
   async function updateSettings() {
+    await saveSettings({ teamNumber, alliance, station });
     await robotApi.updateSettings(teamNumber, alliance, station);
     addLog(`Settings Sync: Team ${teamNumber}`);
   }
@@ -76,6 +77,10 @@
     gm.start();
 
     const initEvents = async () => {
+      const saved = await loadSettings();
+      teamNumber = saved.teamNumber;
+      alliance = saved.alliance;
+      station = saved.station;
       await updateSettings();
       const subs = await setupTauriListeners({
         onBattery: (v) => { battery = parseFloat(v.toFixed(2)); },
