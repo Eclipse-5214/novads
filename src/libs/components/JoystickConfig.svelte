@@ -6,11 +6,13 @@
     slots = [] as SlotState[],
     available = [] as AvailableGamepad[],
     onAssign,
+    onToggleSplitTriggers,
   }: {
     show: boolean;
     slots: SlotState[];
     available: AvailableGamepad[];
     onAssign: (slot: number, gamepadIndex: number | null) => void;
+    onToggleSplitTriggers: (slot: number) => void;
   } = $props();
 </script>
 
@@ -45,6 +47,17 @@
             </div>
 
             {#if slot.assigned}
+              <button
+                onclick={() => onToggleSplitTriggers(i)}
+                class="flex items-center gap-2 px-2 py-1 rounded-lg text-[10px] font-mono transition-colors {slot.splitTriggers ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40' : 'bg-neutral-700/50 text-neutral-500 border border-white/5'} hover:border-purple-500/60"
+                title="Split combined L/R trigger axis into separate axes (fixes Xbox on macOS)"
+              >
+                <span class="w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 {slot.splitTriggers ? 'bg-purple-500 border-purple-400' : 'border-neutral-600'}">
+                  {#if slot.splitTriggers}<span class="text-[8px] leading-none">✓</span>{/if}
+                </span>
+                Split triggers
+              </button>
+
               {#if slot.axes.length > 0}
                 <div class="flex flex-col gap-1">
                   {#each slot.axes as axis, j}

@@ -44,7 +44,7 @@ fn compile_libds(libds_path: &Path, socky_path: &Path) {
     ];
 
     let protocols = [
-        "frc_2014.c", "frc_2015.c", "frc_2016.c", "frc_2020.c",
+        "frc_2014.c", "frc_2015.c", "frc_2016.c", "frc_2020.c", "frc_2026.c",
     ];
 
     build

@@ -22,8 +22,8 @@ pub fn run() {
 
             unsafe {
                 DS_Init();
-                let mut frc2020 = DS_GetProtocolFRC_2020();
-                DS_ConfigureProtocol(&mut frc2020);
+                let mut frc2026 = DS_GetProtocolFRC_2026();
+                DS_ConfigureProtocol(&mut frc2026);
             }
             println!("💜 [RUST]: LibDS Engine Started");
 

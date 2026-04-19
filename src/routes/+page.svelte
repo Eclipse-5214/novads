@@ -146,5 +146,6 @@
     slots={slotStates}
     available={availableGamepads}
     onAssign={(slot, idx) => gm.assignSlot(slot, idx)}
+    onToggleSplitTriggers={(slot) => gm.toggleSplitTriggers(slot)}
   />
 </main>
