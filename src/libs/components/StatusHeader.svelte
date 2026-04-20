@@ -28,7 +28,7 @@
         </div>
         <div class="flex flex-col items-end leading-none">
           <span class="text-[7px] text-neutral-500 uppercase font-black mb-0.5">Battery</span>
-          <span class="font-mono text-lg text-green-400 font-bold">{battery}V</span>
+          <span class="font-mono text-lg font-bold {battery >= 12 ? 'text-green-400' : battery >= 10 ? 'text-yellow-400' : 'text-red-400'}">{battery}V</span>
         </div>
       </div>
 

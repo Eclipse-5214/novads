@@ -12,7 +12,8 @@
   let connected = $state(false);
   let isEnabled = $state(false);
   let controllerName = $state("No Controller");
-  let logs = $state(["System Initialized..."]);
+  type LogEntry = { time: string; msg: string; count: number };
+  let logs = $state<LogEntry[]>([{ time: new Date().toLocaleTimeString().split(' ')[0], msg: "System Initialized...", count: 1 }]);
   let battery = $state(0.0);
   let hasComms = $state(false);
   let hasRobotCode = $state(false);
@@ -30,7 +31,13 @@
 
   function addLog(msg: string) {
     const time = new Date().toLocaleTimeString().split(' ')[0];
-    logs = [`[${time}] ${msg}`, ...logs.slice(0, 20)];
+    const idx = logs.findIndex(e => e.msg === msg);
+    if (idx !== -1) {
+      const updated = { ...logs[idx], count: logs[idx].count + 1, time };
+      logs = [updated, ...logs.filter((_, i) => i !== idx).slice(0, 49)];
+    } else {
+      logs = [{ time, msg, count: 1 }, ...logs.slice(0, 49)];
+    }
   }
 
   async function updateSettings() {
@@ -95,6 +102,12 @@
         onConsole: (msg) => { addLog(`RIO: ${msg.trim()}`); },
       });
       unlisteners = subs;
+
+      // Sync current state in case events fired before listeners registered
+      const [comms, code, volt] = await robotApi.getDsStatus();
+      hasComms = comms;
+      hasRobotCode = code;
+      battery = parseFloat(volt.toFixed(2));
     };
 
     initEvents();

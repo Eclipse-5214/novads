@@ -23,13 +23,14 @@
 
     <div class="flex-1 flex gap-3 items-stretch min-h-0 py-1">
       <div class="flex-3 flex items-center justify-center">
-        <button 
+        <button
           onclick={onToggle}
+          disabled={isLocked && !isEnabled}
           class="w-full h-full max-h-35 rounded-3xl font-black transition-all duration-300 active:scale-[0.95] flex flex-col items-center justify-center gap-1
-          {isEnabled 
-            ? 'bg-red-600 shadow-[0_10px_30px_rgba(220,38,38,0.2)] border-t border-red-400/30' 
+          {isEnabled
+            ? 'bg-red-600 shadow-[0_10px_30px_rgba(220,38,38,0.2)] border-t border-red-400/30'
             : isLocked
-              ? 'bg-neutral-800 cursor-not-allowed opacity-50 grayscale border-white/5' 
+              ? 'bg-neutral-800 cursor-not-allowed opacity-50 grayscale border-white/5'
               : 'bg-purple-600 shadow-[0_10px_30px_rgba(168,85,247,0.2)] border-t border-purple-400/30'}"
         >
           <span class="text-3xl italic tracking-tighter uppercase">

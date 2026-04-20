@@ -25,7 +25,6 @@ pub fn run() {
                 let mut frc2026 = DS_GetProtocolFRC_2026();
                 DS_ConfigureProtocol(&mut frc2026);
             }
-            println!("💜 [RUST]: LibDS Engine Started");
 
             #[allow(non_upper_case_globals)]
             thread::spawn(move || loop {
@@ -67,6 +66,7 @@ pub fn run() {
             commands::update_joystick_data,
             commands::reset_joysticks,
             commands::set_robot_address,
+            commands::get_ds_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

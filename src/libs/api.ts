@@ -34,6 +34,7 @@ export const robotApi = {
     updateSettings: (team: number, alliance: number, position: number) => invoke("update_ds_settings", { team, alliance, position }),
     updateJoysticks: (joysticks: Array<{ axes: number[]; buttons: boolean[] } | null>) => invoke("update_joystick_data", { joysticks }),
     setRobotAddress: (address: string) => invoke("set_robot_address", { address }),
+    getDsStatus: (): Promise<[boolean, boolean, number]> => invoke("get_ds_status"),
 };
 
 export async function setupTauriListeners(callbacks: { onBattery: (v: number) => void; onComms: (v: boolean) => void; onCode: (v: boolean) => void; onConsole: (msg: string) => void; onBrownout?: (v: boolean) => void }) {
