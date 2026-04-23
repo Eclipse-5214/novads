@@ -6,10 +6,15 @@ export interface DSSettings {
     teamNumber: number;
     alliance: number;
     station: number;
+    useDirectIp: boolean;
 }
 
 const STORE_FILE = "settings.json";
-const STORE_DEFAULTS = { teamNumber: 9206, alliance: 0, station: 1 };
+const STORE_DEFAULTS = { teamNumber: 9206, alliance: 0, station: 1, useDirectIp: false };
+
+export function deriveRobotIp(team: number): string {
+    return `10.${Math.floor(team / 100)}.${team % 100}.2`;
+}
 
 export async function loadSettings(): Promise<DSSettings> {
     const store = await load(STORE_FILE, { defaults: STORE_DEFAULTS });
@@ -17,6 +22,7 @@ export async function loadSettings(): Promise<DSSettings> {
         teamNumber: (await store.get<number>("teamNumber")) ?? STORE_DEFAULTS.teamNumber,
         alliance: (await store.get<number>("alliance")) ?? STORE_DEFAULTS.alliance,
         station: (await store.get<number>("station")) ?? STORE_DEFAULTS.station,
+        useDirectIp: (await store.get<boolean>("useDirectIp")) ?? STORE_DEFAULTS.useDirectIp,
     };
 }
 
@@ -25,6 +31,7 @@ export async function saveSettings(s: DSSettings): Promise<void> {
     await store.set("teamNumber", s.teamNumber);
     await store.set("alliance", s.alliance);
     await store.set("station", s.station);
+    await store.set("useDirectIp", s.useDirectIp);
 }
 
 export const robotApi = {

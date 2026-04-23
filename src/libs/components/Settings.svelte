@@ -6,6 +6,7 @@
     teamNumber = $bindable(9206),
     alliance = $bindable(0),
     station = $bindable(1),
+    useDirectIp = $bindable(false),
     onSave
   } = $props();
 
@@ -21,7 +22,16 @@
 
   async function toggleSimMode() {
     simMode = !simMode;
+    if (simMode) useDirectIp = false;
     await robotApi.setRobotAddress(simMode ? "127.0.0.1" : "");
+    handleUpdate();
+  }
+
+  async function toggleDirectIp() {
+    useDirectIp = !useDirectIp;
+    if (useDirectIp) simMode = false;
+    else await robotApi.setRobotAddress("");
+    handleUpdate();
   }
 </script>
 
@@ -56,6 +66,17 @@
               {/each}
             </div>
           </div>
+        </div>
+
+        <div>
+          <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-2">Connection</span>
+          <button onclick={toggleDirectIp}
+            class="w-full p-3 rounded-xl border font-bold transition-all mb-2 {useDirectIp ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-black border-white/5 text-neutral-600'}">
+            {useDirectIp ? `Direct IP — 10.${Math.floor(teamNumber/100)}.${teamNumber%100}.2` : 'Use Direct IP (Android)'}
+          </button>
+          {#if useDirectIp}
+            <p class="text-[10px] text-green-600 mb-3 text-center">Bypasses mDNS — recommended for Android</p>
+          {/if}
         </div>
 
         <div>

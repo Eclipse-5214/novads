@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { robotApi, setupTauriListeners, loadSettings, saveSettings } from "../libs/api";
+  import { robotApi, setupTauriListeners, loadSettings, saveSettings, deriveRobotIp } from "../libs/api";
   import { GamepadManager, type SlotState, type AvailableGamepad } from "../libs/gamepad";
   import StatusHeader from "../libs/components/StatusHeader.svelte";
   import ControlPanel from "../libs/components/ControlPanel.svelte";
@@ -22,6 +22,7 @@
   let selectedMode = $state(0);
   let alliance = $state(0);
   let station = $state(1);
+  let useDirectIp = $state(false);
   let showSettings = $state(false);
   let showJoystickConfig = $state(false);
   let slotStates = $state<SlotState[]>(new Array(6).fill({ assigned: false, name: "", gamepadIndex: null, axes: [], buttons: [] }));
@@ -41,8 +42,9 @@
   }
 
   async function updateSettings() {
-    await saveSettings({ teamNumber, alliance, station });
+    await saveSettings({ teamNumber, alliance, station, useDirectIp });
     await robotApi.updateSettings(teamNumber, alliance, station);
+    if (useDirectIp) await robotApi.setRobotAddress(deriveRobotIp(teamNumber));
     addLog(`Settings Sync: Team ${teamNumber}`);
   }
 
@@ -88,6 +90,7 @@
       teamNumber = saved.teamNumber;
       alliance = saved.alliance;
       station = saved.station;
+      useDirectIp = saved.useDirectIp;
       await updateSettings();
       const subs = await setupTauriListeners({
         onBattery: (v) => { battery = parseFloat(v.toFixed(2)); },
@@ -151,6 +154,7 @@
     bind:teamNumber
     bind:alliance
     bind:station
+    bind:useDirectIp
     onSave={updateSettings}
   />
 

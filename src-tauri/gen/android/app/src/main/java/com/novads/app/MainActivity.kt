@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowInsets
@@ -15,10 +16,12 @@ class MainActivity : TauriActivity() {
 
   private lateinit var connectivityManager: ConnectivityManager
   private var wifiNetworkCallback: ConnectivityManager.NetworkCallback? = null
+  private var multicastLock: WifiManager.MulticastLock? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     bindToWifi()
+    acquireMulticastLock()
     super.onCreate(savedInstanceState)
     hideSystemUI()
   }
@@ -60,8 +63,17 @@ class MainActivity : TauriActivity() {
     }
   }
 
+  private fun acquireMulticastLock() {
+    val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+    multicastLock = wifiManager.createMulticastLock("novads_robot_comms")
+    multicastLock?.setReferenceCounted(false)
+    multicastLock?.acquire()
+    Log.d("NovaDS", "MulticastLock acquired — inbound UDP enabled")
+  }
+
   override fun onDestroy() {
     super.onDestroy()
+    multicastLock?.release()
     wifiNetworkCallback?.let { connectivityManager.unregisterNetworkCallback(it) }
     connectivityManager.bindProcessToNetwork(null)
   }
