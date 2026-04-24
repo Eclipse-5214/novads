@@ -14,13 +14,9 @@ export interface AvailableGamepad {
     name: string;
 }
 
-// On macOS the Gamepad API reports Xbox controllers as Extended Gamepad: [LX, LY, RX, RY, combined_triggers].
-// This puts RX/RY at indices 2/3 instead of the FRC-expected 4/5, breaking turning.
-// WPILib reads triggers from axes 2/3, not buttons, so we remap using buttons[6/7].value.
-function detectCombinedTriggers(gp: Gamepad): boolean {
-    return /Mac/.test(navigator.platform) && /xbox|045e/i.test(gp.id) && gp.axes.length === 5;
-}
-
+// Remap a controller's axes to FRC-standard layout: [LX, LY, LT, RT, RX, RY].
+// Reads triggers from buttons[6/7].value — works on Windows, macOS, and Android
+// regardless of how the browser reports trigger axes.
 function applyTriggerSplit(gp: Gamepad): number[] {
     const axes = Array.from(gp.axes).map(Number);
     return [
@@ -41,7 +37,10 @@ export class GamepadManager {
     private onStatusChange: (connected: boolean, name: string) => void;
     private onLiveUpdate: (slots: SlotState[], available: AvailableGamepad[]) => void;
 
-    constructor(callbacks: { onStatusChange: (connected: boolean, name: string) => void; onLiveUpdate: (slots: SlotState[], available: AvailableGamepad[]) => void }) {
+    constructor(callbacks: {
+        onStatusChange: (connected: boolean, name: string) => void;
+        onLiveUpdate: (slots: SlotState[], available: AvailableGamepad[]) => void;
+    }) {
         this.onStatusChange = callbacks.onStatusChange;
         this.onLiveUpdate = callbacks.onLiveUpdate;
     }
@@ -73,25 +72,20 @@ export class GamepadManager {
             if (idx !== null && !raw[idx]) this.slotAssignments[i] = null;
         }
 
-        // Auto-assign first available to slot 0 if nothing is assigned yet
+        // Auto-assign first available gamepad to slot 0
         if (!this.slotAssignments.some((s) => s !== null) && available.length > 0) {
             this.slotAssignments[0] = available[0].index;
         }
 
+        // When a slot's assignment changes, reset split triggers to ON (default)
         for (let i = 0; i < this.slotAssignments.length; i++) {
             const gpIdx = this.slotAssignments[i];
             if (gpIdx !== this.prevGamepadIndex[i]) {
-                if (gpIdx !== null) {
-                    const gp = raw[gpIdx];
-                    if (gp && detectCombinedTriggers(gp)) this.splitTriggers[i] = true;
-                } else {
-                    this.splitTriggers[i] = false;
-                }
+                this.splitTriggers[i] = gpIdx !== null;
                 this.prevGamepadIndex[i] = gpIdx;
             }
         }
 
-        // Header connection indicator
         const anyConnected = available.length > 0;
         if (anyConnected !== this.wasConnected) {
             this.wasConnected = anyConnected;
@@ -102,8 +96,9 @@ export class GamepadManager {
             if (gpIdx === null) return { assigned: false, name: "", gamepadIndex: null, axes: [], buttons: [], splitTriggers: false };
             const gp = raw[gpIdx];
             if (!gp) return { assigned: false, name: "", gamepadIndex: null, axes: [], buttons: [], splitTriggers: false };
-            const rawAxes = Array.from(gp.axes).map(Number);
-            const axes = this.splitTriggers[i] ? applyTriggerSplit(gp) : rawAxes;
+            const axes = this.splitTriggers[i]
+                ? applyTriggerSplit(gp)
+                : Array.from(gp.axes).map(Number);
             return {
                 assigned: true,
                 name: gp.id.split(" (")[0],

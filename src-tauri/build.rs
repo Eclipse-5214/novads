@@ -5,31 +5,35 @@ fn main() {
     let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let target = env::var("TARGET").unwrap();
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-    
+
     let libds_path = project_dir.join("libds");
     let libds_inc = libds_path.join("include");
     let socky_path = libds_path.join("lib/Socky/src");
 
-    compile_libds(&libds_path, &socky_path);
+    compile_libds(&libds_path, &socky_path, &target, &out_dir);
 
-    let header_file = libds_inc.join("LibDS.h");
     let mut builder = bindgen::Builder::default()
-        .header(header_file.to_str().unwrap())
+        .header(libds_inc.join("LibDS.h").to_str().unwrap())
         .clang_arg(format!("-I{}", libds_inc.display()))
         .clang_arg(format!("-I{}", socky_path.display()))
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()));
 
-    if target.contains("android") {
+    if target.contains("windows") {
+        let pthread_inc = libds_path.join("lib/pthread-win32/include");
+        builder = builder.clang_arg(format!("-I{}", pthread_inc.display()));
+    } else if target.contains("android") {
         builder = configure_android_bindgen(builder, &target);
     }
 
     let bindings = builder.generate().expect("Unable to generate bindings");
-    bindings.write_to_file(out_dir.join("bindings.rs")).expect("Couldn't write bindings!");
+    bindings
+        .write_to_file(out_dir.join("bindings.rs"))
+        .expect("Couldn't write bindings!");
 
     tauri_build::build();
 }
 
-fn compile_libds(libds_path: &Path, socky_path: &Path) {
+fn compile_libds(libds_path: &Path, socky_path: &Path, target: &str, out_dir: &Path) {
     println!("cargo:rerun-if-changed={}", libds_path.join("src").display());
     println!("cargo:rerun-if-changed={}", libds_path.join("include").display());
     println!("cargo:rerun-if-changed={}", socky_path.display());
@@ -42,7 +46,6 @@ fn compile_libds(libds_path: &Path, socky_path: &Path) {
         "joysticks.c", "protocols.c", "socket.c", "timer.c",
         "utils.c", "string.c", "array.c", "queue.c",
     ];
-
     let protocols = [
         "frc_2014.c", "frc_2015.c", "frc_2016.c", "frc_2020.c", "frc_2026.c",
     ];
@@ -55,12 +58,31 @@ fn compile_libds(libds_path: &Path, socky_path: &Path) {
     for file in &core_files {
         build.file(src.join(file));
     }
-
     for file in &protocols {
         build.file(src.join("protocols").join(file));
     }
-
     build.file(socky_path.join("socky.c"));
+
+    if target.contains("windows") {
+        let pthread_dir = libds_path.join("lib/pthread-win32");
+        let dll_arch = if target.contains("x86_64") { "x64" } else { "x86" };
+        let dll_dir = pthread_dir.join("dll").join(dll_arch);
+
+        build.include(pthread_dir.join("include"));
+
+        println!("cargo:rustc-link-search=native={}", dll_dir.display());
+        println!("cargo:rustc-link-lib=pthreadVC2");
+        println!("cargo:rustc-link-lib=ws2_32");
+        println!("cargo:rustc-link-lib=winmm");
+
+        // Copy pthreadVC2.dll next to the exe so dev mode and unbundled runs work.
+        // OUT_DIR is .../target/{profile}/build/novads-xxx/out — go up 3 levels.
+        let dll_src = dll_dir.join("pthreadVC2.dll");
+        if let Some(exe_dir) = out_dir.parent().and_then(|p| p.parent()).and_then(|p| p.parent()) {
+            let _ = std::fs::copy(&dll_src, exe_dir.join("pthreadVC2.dll"));
+        }
+    }
+
     build.warnings(false).compile("ds");
 }
 
@@ -69,21 +91,21 @@ fn configure_android_bindgen(builder: bindgen::Builder, target: &str) -> bindgen
         .or_else(|_| env::var("ANDROID_NDK_HOME"))
         .expect("NDK_HOME or ANDROID_NDK_HOME must be set for Android builds");
 
-    let host_os = if cfg!(target_os = "macos") { "darwin-x86_64" } 
-                  else if cfg!(target_os = "windows") { "windows-x86_64" } 
+    let host_os = if cfg!(target_os = "macos") { "darwin-x86_64" }
+                  else if cfg!(target_os = "windows") { "windows-x86_64" }
                   else { "linux-x86_64" };
-    
+
     let sysroot = PathBuf::from(&ndk_home)
         .join("toolchains/llvm/prebuilt")
         .join(host_os)
         .join("sysroot");
 
     let target_include_dir = match target {
-        "aarch64-linux-android" => "aarch64-linux-android",
-        "armv7-linux-androideabi" => "arm-linux-androideabi",
-        "i686-linux-android" => "i686-linux-android",
-        "x86_64-linux-android" => "x86_64-linux-android",
-        _ => "aarch64-linux-android",
+        "aarch64-linux-android"    => "aarch64-linux-android",
+        "armv7-linux-androideabi"  => "arm-linux-androideabi",
+        "i686-linux-android"       => "i686-linux-android",
+        "x86_64-linux-android"     => "x86_64-linux-android",
+        _                          => "aarch64-linux-android",
     };
 
     builder

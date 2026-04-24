@@ -13,7 +13,7 @@
 <header class="flex justify-between items-center bg-neutral-900/50 p-3 rounded-2xl border border-white/5 shrink-0">
     <div class="flex flex-col">
         <h1 class="text-xl font-black italic tracking-tighter text-purple-500 uppercase leading-none">Nova<span class="text-white">DS</span></h1>
-        <span class="text-[8px] text-neutral-500 font-bold tracking-[0.2em] uppercase">Android Driver Station</span>
+        <span class="text-[8px] text-neutral-500 font-bold tracking-[0.2em] uppercase">Driver Station</span>
     </div>
     
     <div class="flex gap-3 items-center">
