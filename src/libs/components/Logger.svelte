@@ -10,10 +10,6 @@
       <Activity size={14} class="text-purple-500" />
       <span class="text-[10px] uppercase font-black tracking-[0.3em] text-purple-400">System Logs</span>
     </div>
-    <div class="flex items-center gap-2">
-      <div class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></div>
-      <span class="text-[8px] font-bold text-neutral-700 tracking-widest">LIVE_STREAM</span>
-    </div>
   </div>
   
   <div class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
